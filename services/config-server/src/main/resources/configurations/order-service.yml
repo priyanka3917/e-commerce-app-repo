@@ -1,0 +1,26 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/ecommerce_db
+    password: postgres
+    username: postgres
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+
+server:
+  port: 8091
+
+feign:
+  retryer:
+    maxAttempts: 3
+    period: 2000
+    maxPeriod: 5000
+  product:
+    service:
+      #      url: ${PRODUCT_SERVICE_URL:http://localhost:8092}
+      #      path: ${PRODUCT_SERVICE_PATH:/api/v1/orders}
+      name: ${PRODUCT_SERVICE_NAME:product-service}
