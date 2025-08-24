@@ -1,6 +1,6 @@
 package com.orderService.utils;
 
-import com.productService.exception.ValidationException;
+import com.orderService.exception.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;

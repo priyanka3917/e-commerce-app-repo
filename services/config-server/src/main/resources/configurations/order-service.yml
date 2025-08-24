@@ -21,6 +21,10 @@ feign:
     maxPeriod: 5000
   product:
     service:
+      name: ${PRODUCT_SERVICE_NAME:product-service}
+  user:
+    service:
+      name: ${USER_SERVICE_NAME:user-service}
+
       #      url: ${PRODUCT_SERVICE_URL:http://localhost:8092}
       #      path: ${PRODUCT_SERVICE_PATH:/api/v1/orders}
-      name: ${PRODUCT_SERVICE_NAME:product-service}

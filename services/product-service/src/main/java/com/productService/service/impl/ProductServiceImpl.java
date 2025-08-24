@@ -55,7 +55,7 @@ public class ProductServiceImpl implements ProductService {
     @Override
     public String deleteProductsById(String id) {
         if(!productRepository.existsById(id)){
-            throw new ValidationException("product not found with id: "+ id);
+            throw new ValidationException("Product not found with id: "+ id);
         }
         productRepository.deleteById(id);
         return "Product Deleted Successfully " + id;
@@ -63,7 +63,7 @@ public class ProductServiceImpl implements ProductService {
 
     public void reduceStock(String id, int qty) {
         ProductEntity p = productRepository.findById(id)
-                .orElseThrow(() -> new ValidationException("product not found with id: "+ id));
+                .orElseThrow(() -> new ValidationException("Product not found with id: "+ id));
         if (p.getStock() < qty)
             throw new ValidationException("Insufficient stock");
         p.setStock(p.getStock() - qty);
