@@ -1,6 +1,6 @@
 package com.productService.utils;
 
-import com.productService.exception.ValidationException;
+import jakarta.validation.ValidationException;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -41,3 +41,4 @@ public class GenericResponse<T> {
                 .build();
     }
 }
+
