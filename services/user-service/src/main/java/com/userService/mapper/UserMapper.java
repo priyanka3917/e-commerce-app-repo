@@ -28,4 +28,5 @@ public interface UserMapper {
 
     @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     void updateUserResponse(UpdateUserRequestDTO request, @MappingTarget UserEntity entity);
+
 }

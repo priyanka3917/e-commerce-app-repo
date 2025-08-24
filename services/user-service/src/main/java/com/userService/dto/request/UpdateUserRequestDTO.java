@@ -10,7 +10,7 @@ public record UpdateUserRequestDTO(
         @NotNull
         UUID id,
 
-        @Size(max=100)
+        @Size(max =100)
         String username,
 
         @Email
@@ -20,7 +20,7 @@ public record UpdateUserRequestDTO(
 
         String password,
 
-        @Size(max=150)
+        @Size(max= 100)
         String fullName
 
 ) {

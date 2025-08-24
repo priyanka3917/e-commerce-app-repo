@@ -8,7 +8,7 @@ import java.util.UUID;
 
 public record UserCreateRequestDTO(
 
-        @Size(max=100)
+        @Size(max =100)
         String username,
 
         @Email
@@ -18,7 +18,7 @@ public record UserCreateRequestDTO(
 
         String password,
 
-        @Size(max=150)
-        String fullname
+        @Size(max= 100)
+        String fullName
 ) {
 }
