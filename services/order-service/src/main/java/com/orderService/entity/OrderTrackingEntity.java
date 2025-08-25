@@ -4,7 +4,8 @@ import com.orderService.enums.OrderStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.Id;
+
 
 import java.time.Instant;
 import java.util.UUID;
@@ -15,7 +16,7 @@ import java.util.UUID;
 @AllArgsConstructor
 @Builder
 @Entity
-@Table(name = "order_tracking")
+@Table(name = "tracking")
 public class OrderTrackingEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
@@ -26,11 +27,11 @@ public class OrderTrackingEntity {
     @JoinColumn(name = "order_id",nullable = false)
     private OrderEntity order;
 
-    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @Column(name= "current_status",nullable =false)
     private OrderStatus currentStatus; //PLACED,SHIPPED,DELIVERED
 
     private String location;
-    private String trackingNumber;
 
     @UpdateTimestamp
     private Instant lastUpdated;

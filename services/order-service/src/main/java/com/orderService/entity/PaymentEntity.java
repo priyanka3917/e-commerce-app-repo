@@ -1,10 +1,12 @@
 package com.orderService.entity;
 
+import com.orderService.enums.PaymentMethod;
 import com.orderService.enums.PaymentStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.springframework.data.annotation.CreatedDate;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.Id;
+
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -23,15 +25,21 @@ public class PaymentEntity {
     @Column(unique = true,nullable = false)
     private UUID id;
 
-    @OneToOne(mappedBy = "order_id")
+    @OneToOne
+    @JoinColumn(name = "order_id", nullable = false)
     private OrderEntity order;
 
     private BigDecimal amount;
     private String transactionId;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable =false)
     private PaymentStatus paymentStatus;
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable =false)
+    private PaymentMethod paymentMethod;
 
     @CreatedDate
     private Instant paymentDate;
-
-
 }

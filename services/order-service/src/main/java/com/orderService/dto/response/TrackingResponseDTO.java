@@ -8,7 +8,6 @@ import java.util.UUID;
 public record TrackingResponseDTO(
         UUID id,
         OrderStatus currentStatus,
-        String trackingNumber,
         String location,
         Instant lastUpdated
 ) {

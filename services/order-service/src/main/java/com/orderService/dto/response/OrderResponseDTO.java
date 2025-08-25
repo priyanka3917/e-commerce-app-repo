@@ -8,9 +8,9 @@ import java.util.List;
 import java.util.UUID;
 
 public record OrderResponseDTO(
-        UUID uuid,
+        UUID id,
         UUID userId,
-        BigDecimal totalPrice,
+        BigDecimal totalAmount,
         OrderStatus orderStatus,
         Instant orderDate,
         List<OrderItemResponseDTO> items,

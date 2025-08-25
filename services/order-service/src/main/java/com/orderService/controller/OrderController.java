@@ -24,7 +24,6 @@ public class OrderController {
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create Order.")
     public ResponseEntity<GenericResponse<OrderResponseDTO>> createOrder(@Valid @RequestBody OrderCreateRequestDTO req) {
-        //return ResponseEntity.ok(GenericResponse.success(orderService.createOrder(req)));
-        return null;
+        return ResponseEntity.ok(GenericResponse.success(orderService.createOrder(req)));
     }
 }

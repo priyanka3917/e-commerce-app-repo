@@ -5,7 +5,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
-import org.springframework.data.annotation.Id;
+import jakarta.persistence.Id;
+
 
 import java.math.BigDecimal;
 import java.time.Instant;
@@ -30,7 +31,7 @@ public class OrderEntity {
     private UUID userId;
 
     @Column(nullable =false,precision = 10,scale=2)
-    private BigDecimal totalPrice;
+    private BigDecimal totalAmount;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable =false)
@@ -55,6 +56,6 @@ public class OrderEntity {
     void prePersist() {
         if (orderDate == null) orderDate = Instant.now();
         if (status == null) status = OrderStatus.PENDING;
-        if (totalPrice == null) totalPrice = BigDecimal.ZERO;
+        if (totalAmount == null) totalAmount = BigDecimal.ZERO;
     }
 }
