@@ -41,4 +41,6 @@ public class UserEntity {
 
     @UpdateTimestamp
     private Instant updatedAt;
+
+
 }
