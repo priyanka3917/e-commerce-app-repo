@@ -55,6 +55,8 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity order = new OrderEntity();
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
+        order = orderRepo.save(order);
+        final OrderEntity savedOrder = order;
 
         List<OrderItemEntity> orderItems = request.items().stream().map(itemRequest -> {
             //Fetch Product details using Feign
@@ -65,9 +67,9 @@ public class OrderServiceImpl implements OrderService {
             ProductResponseDTO product = productResponse.getBody().getData();
             OrderItemEntity orderItem = new OrderItemEntity();
             orderItem.setProductId(product.id());
-            orderItem.setQuantity(product.stock());
+            orderItem.setQuantity(itemRequest.quantity());
             orderItem.setUnitPrice(product.price());
-            orderItem.setOrder(order);
+            orderItem.setOrder(savedOrder);
             orderItemRepo.save(orderItem);
             return orderItem;
         }).collect(Collectors.toList());

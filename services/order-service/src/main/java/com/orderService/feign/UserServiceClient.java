@@ -13,6 +13,6 @@ import java.util.UUID;
 @FeignClient(name = "${feign.user.service.name}", configuration = FeignConfig.class)
 public interface UserServiceClient {
 
-    @GetMapping("/{id}")
+    @GetMapping("/api/v1/users/{id}")
     public ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> getUserById(@PathVariable UUID id);
 }

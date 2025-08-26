@@ -6,16 +6,18 @@ import com.userService.dto.response.GetAllUsersResponseDTO;
 import com.userService.dto.response.GetOrUpdateUserByIdResponseDTO;
 import com.userService.dto.response.UserCreateResponseDTO;
 import com.userService.entity.UserEntity;
-import org.mapstruct.BeanMapping;
-import org.mapstruct.Mapper;
-import org.mapstruct.MappingTarget;
-import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.*;
 
 import java.util.List;
 
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
+    @Mapping(target = "username", expression = "java(dto.username())")
+    @Mapping(target = "fullName", expression = "java(dto.fullName())")
+    @Mapping(target = "email", expression = "java(dto.email())")
+    @Mapping(target = "address", expression = "java(dto.address())")
+    @Mapping(target = "password", expression = "java(dto.password())")
     //CREATE USER
     UserEntity toEntity(UserCreateRequestDTO dto);
     UserCreateResponseDTO toResponse(UserEntity entity);

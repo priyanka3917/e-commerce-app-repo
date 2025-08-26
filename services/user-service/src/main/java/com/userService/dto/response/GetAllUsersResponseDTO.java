@@ -14,6 +14,6 @@ public record GetAllUsersResponseDTO(
         String address,
         String fullName,
         Instant createdAt,
-        Instant UpdatedAt
+        Instant updatedAt
 ) {
 }

@@ -43,7 +43,7 @@ public class OrderMapper {
         );
     }
 
-    private OrderItemResponseDTO toOrderItemResponseDTO(OrderItemEntity item) {
+    public OrderItemResponseDTO toOrderItemResponseDTO(OrderItemEntity item) {
         return new OrderItemResponseDTO(
                 item.getId(),
                 item.getProductId(),
@@ -52,7 +52,7 @@ public class OrderMapper {
         );
     }
 
-    private TrackingResponseDTO toTrackingResponseDTO(OrderTrackingEntity tracking) {
+    public TrackingResponseDTO toTrackingResponseDTO(OrderTrackingEntity tracking) {
         if (tracking == null) return null;
         return new TrackingResponseDTO(
                 tracking.getId(),
@@ -62,7 +62,7 @@ public class OrderMapper {
         );
     }
 
-    private PaymentResponseDTO toPaymentResponseDTO(PaymentEntity payment) {
+    public PaymentResponseDTO toPaymentResponseDTO(PaymentEntity payment) {
         if (payment == null) return null;
         return new PaymentResponseDTO(
                 payment.getId(),
