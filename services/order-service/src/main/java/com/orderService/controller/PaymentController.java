@@ -9,6 +9,7 @@ import com.orderService.service.PaymentService;
 import com.orderService.utils.GenericResponse;
 import io.swagger.v3.oas.annotations.Operation;
 import jakarta.validation.Valid;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,15 +27,11 @@ public class PaymentController {
     @PostMapping
     public ResponseEntity<GenericResponse<PaymentResponseDTO>> makePayment(
             @Valid @RequestBody PaymentCreateRequestDTO request) {
-
         OrderEntity order = orderRepo.findById(request.orderId())
-                .orElseThrow(() -> new RuntimeException("Order not found with id: " + request.orderId()));
-
+                .orElseThrow(() -> new ValidationException("Order not found with id: " + request.orderId()));
         PaymentResponseDTO response = paymentService.makePayment(order, request.amount(), request.paymentMethod());
-
         return ResponseEntity.ok(GenericResponse.success(response));
     }
-
     @Operation(summary = "Get payment details by order ID")
     @GetMapping("/{orderId}")
     public ResponseEntity<GenericResponse<PaymentResponseDTO>> getPaymentByOrderId(@PathVariable UUID orderId) {

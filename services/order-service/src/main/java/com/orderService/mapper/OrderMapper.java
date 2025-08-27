@@ -73,4 +73,14 @@ public class OrderMapper {
                 payment.getPaymentDate()
         );
     }
+
+    public List<OrderResponseDTO> toOrderResponseDTOList(List<OrderEntity> orders) {
+        if (orders == null || orders.isEmpty()) {
+            return List.of(); // Return empty list instead of null
+        }
+
+        return orders.stream()
+                .map(this::toOrderResponseDTO)
+                .collect(Collectors.toList());
+    }
 }

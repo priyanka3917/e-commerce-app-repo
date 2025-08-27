@@ -1,6 +1,7 @@
 package com.orderService.entity;
 
 import com.orderService.enums.OrderStatus;
+import com.orderService.enums.TrackingStatus;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -29,7 +30,7 @@ public class OrderTrackingEntity {
 
     @Enumerated(EnumType.STRING)
     @Column(name= "current_status",nullable =false)
-    private OrderStatus currentStatus; //PLACED,SHIPPED,DELIVERED
+    private TrackingStatus currentStatus; //PLACED,SHIPPED,DELIVERED
 
     private String location;
 

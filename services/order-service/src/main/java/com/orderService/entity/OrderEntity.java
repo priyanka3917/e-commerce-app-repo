@@ -52,6 +52,9 @@ public class OrderEntity {
     @OneToOne(mappedBy = "order", cascade = CascadeType.ALL, orphanRemoval = true)
     private OrderTrackingEntity tracking;
 
+    @Column(name = "reservation_id", nullable = false, unique = true)
+    private String reservationId;
+
     @PrePersist
     void prePersist() {
         if (orderDate == null) orderDate = Instant.now();

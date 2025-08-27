@@ -22,7 +22,6 @@ public class TrackingController {
     @PostMapping
     public ResponseEntity<GenericResponse<TrackingResponseDTO>> startTracking(
             @Valid @RequestBody TrackingCreateRequestDTO request) {
-
         TrackingResponseDTO response = trackingService.startTracking(request.orderId(), request.location());
         return ResponseEntity.ok(GenericResponse.success(response));
     }
@@ -31,13 +30,11 @@ public class TrackingController {
     @PutMapping
     public ResponseEntity<GenericResponse<TrackingResponseDTO>> updateTracking(
             @Valid @RequestBody TrackingUpdateRequestDTO request) {
-
         TrackingResponseDTO response = trackingService.updateTracking(
                 request.orderId(),
                 request.status(),
                 request.location()
         );
-
         return ResponseEntity.ok(GenericResponse.success(response));
     }
 }

@@ -52,4 +52,26 @@ public class ProductController {
     public ResponseEntity<GenericResponse<String>> delete(@PathVariable String id) {
         return ResponseEntity.ok(GenericResponse.success(productService.deleteProductsById(id)));
     }
+    @PutMapping("/{productId}/reserve")
+    @Operation(summary = "Reserve Stock")
+    public ResponseEntity<GenericResponse<Void>> reserveStock(
+            @PathVariable String productId,
+            @RequestParam int quantity,
+            @RequestParam String reservationId) {
+        productService.reserveStock(productId, quantity, reservationId);
+        return ResponseEntity.ok().build();
+    }
+
+    @PutMapping("/release")
+    public ResponseEntity<GenericResponse<Void>> releaseStock(@RequestParam String reservationId) {
+        productService.releaseStock(reservationId);
+        return ResponseEntity.ok().build();
+    }
+    @PutMapping("/confirm")
+    public ResponseEntity<GenericResponse<Void>> confirmReservation(@RequestParam String reservationId) {
+        productService.confirmReservation(reservationId);
+        return ResponseEntity.ok().build();
+    }
+
+
 }

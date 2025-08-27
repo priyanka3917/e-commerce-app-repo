@@ -12,4 +12,7 @@ public interface ProductService {
     List<ProductResponseDTO> getAllProducts();
     ProductResponseDTO updateProducts(String id, ProductUpdateRequestDTO dto);
     String deleteProductsById(String id);
+    void reserveStock(String productId,int quantity, String reservationId);
+    void releaseStock(String reservationId);
+    void confirmReservation(String reservationId);
 }

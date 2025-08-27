@@ -4,14 +4,18 @@ import com.productService.dto.request.ProductCreateRequestDTO;
 import com.productService.dto.request.ProductUpdateRequestDTO;
 import com.productService.dto.response.ProductResponseDTO;
 import com.productService.entity.ProductEntity;
+import com.productService.entity.StockReservationEntity;
+import com.productService.enums.ReservationStatus;
 import com.productService.exception.ValidationException;
 import com.productService.mapper.ProductMapper;
 import com.productService.repository.ProductRepository;
+import com.productService.repository.StockReservationRepository;
 import com.productService.service.ProductService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.Instant;
 import java.util.List;
 
 @Service
@@ -23,6 +27,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     ProductMapper productMapper;
+
+    @Autowired
+    StockReservationRepository stockReservationRepository;
 
     @Override
     public ProductResponseDTO createProduct(ProductCreateRequestDTO req) {
@@ -60,6 +67,57 @@ public class ProductServiceImpl implements ProductService {
         productRepository.deleteById(id);
         return "Product Deleted Successfully " + id;
     }
+
+    @Override
+    public void reserveStock(String productId, int quantity, String reservationId) {
+        if (stockReservationRepository.findByReservationId(reservationId).isPresent()) {
+            return; // Already reserved
+        }
+
+        ProductEntity product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        if (product.getStock() < quantity) {
+            throw new RuntimeException("Insufficient stock");
+        }
+
+        product.setStock(product.getStock() - quantity);
+        productRepository.save(product);
+
+        StockReservationEntity reservation = new StockReservationEntity();
+        reservation.setReservationId(reservationId);
+        reservation.setProductId(productId);
+        reservation.setQuantity(quantity);
+        reservation.setReservedAt(Instant.now());
+        reservation.setStatus(ReservationStatus.PENDING);
+        stockReservationRepository.save(reservation);
+    }
+
+    @Override
+    public void releaseStock(String reservationId) {
+        StockReservationEntity reservation = stockReservationRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new ValidationException("Reservation not found"));
+
+        if (reservation.getStatus()== ReservationStatus.RELEASED) return;
+
+        ProductEntity product = productRepository.findById(reservation.getProductId())
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        product.setStock(product.getStock() + reservation.getQuantity());
+        productRepository.save(product);
+
+        reservation.setStatus(ReservationStatus.RELEASED);
+        stockReservationRepository.save(reservation);
+
+    }
+    public void confirmReservation(String reservationId) {
+        StockReservationEntity reservation = stockReservationRepository.findByReservationId(reservationId)
+                .orElseThrow(() -> new RuntimeException("Reservation not found"));
+
+        reservation.setStatus(ReservationStatus.RESERVED);
+        stockReservationRepository.save(reservation);
+    }
+
 
     public void reduceStock(String id, int qty) {
         ProductEntity p = productRepository.findById(id)
