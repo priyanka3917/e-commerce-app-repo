@@ -10,5 +10,5 @@ import java.util.UUID;
 
 public interface OrderService {
     OrderResponseDTO createOrder(OrderCreateRequestDTO request);
-    Page<OrderResponseDTO> getOrdersDetailByUserId(UUID id, Pageable pageable);
+    Page<OrderResponseDTO> getOrdersDetailByUserId(UUID id, int offset, int size);
 }

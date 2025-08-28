@@ -34,12 +34,11 @@ public class OrderController {
         return ResponseEntity.ok(GenericResponse.success(orderService.createOrder(req)));
     }
 
-    @GetMapping
+    @GetMapping("/{id}/{offset}/{size}")
     @Operation(summary = "Get paginated order details for a particular user")
     public ResponseEntity<GenericResponse<Page<OrderResponseDTO>>> getOrderDetailsOfUser(
-            @RequestParam UUID userId,
-            @PageableDefault(size = 10, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        Page<OrderResponseDTO> pagedOrders = orderService.getOrdersDetailByUserId(userId, pageable);
+            @PathVariable UUID id,@PathVariable int offset, @PathVariable int size ){
+        Page<OrderResponseDTO> pagedOrders = orderService.getOrdersDetailByUserId(id, offset,size);
         return ResponseEntity.ok(GenericResponse.success(pagedOrders));
     }
 

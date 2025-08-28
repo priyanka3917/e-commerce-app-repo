@@ -35,8 +35,10 @@ public class PaymentServiceImpl implements PaymentService {
     @CircuitBreaker(name = "paymentCB", fallbackMethod = "fallbackPayment")
     @Retry(name = "paymentRetry")
     public PaymentResponseDTO makePayment(OrderEntity order, BigDecimal amount, PaymentMethod method) {
-        String txnId = "TXN-" + UUID.randomUUID().toString().substring(0, 8);
+        boolean success = simulatePaymentSuccess();
+        PaymentStatus status = success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;
 
+        String txnId = "TXN-" + UUID.randomUUID().toString().substring(0, 8);
         PaymentEntity entity = PaymentEntity.builder()
                 .order(order)
                 .amount(amount)
@@ -46,6 +48,9 @@ public class PaymentServiceImpl implements PaymentService {
                 .paymentDate(Instant.now())
                 .build();
 
+        if (!success) {
+            throw new RuntimeException("Payment failure");
+        }
         return orderMapper.toPaymentResponseDTO(paymentRepo.save(entity));
     }
 
@@ -92,6 +97,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     }
     private boolean simulatePaymentSuccess() {
-        return Math.random() > 0.2; // 80% success rate
+        return Math.random() > 0.2;
     }
 }

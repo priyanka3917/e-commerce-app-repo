@@ -19,6 +19,7 @@ import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -179,8 +180,10 @@ public class OrderServiceImpl implements OrderService {
     }
 
     @Override
-    public Page<OrderResponseDTO> getOrdersDetailByUserId(UUID id, Pageable pageable) {
-        Page<OrderEntity> orders = orderRepo.findByUserId(id, pageable);
+    public Page<OrderResponseDTO> getOrdersDetailByUserId(UUID id, int offset, int size) {
+        Pageable pageable = PageRequest.of(offset, size);
+        Page<OrderEntity> orders = orderRepo.findByUserId(id,pageable);
+
         if (orders.isEmpty()) {
             throw new ValidationException("No orders found for the id: " + id);
         }
