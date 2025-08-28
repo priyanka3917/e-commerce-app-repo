@@ -66,6 +66,8 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity order = new OrderEntity();
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
+        order.setReservationId("RSV-" + UUID.randomUUID().toString().substring(0, 8));
+
         order = orderRepo.save(order);
         final OrderEntity savedOrder = order;
 
@@ -89,9 +91,11 @@ public class OrderServiceImpl implements OrderService {
                 }
 
                 // Step 4: Reserve stock (Saga step)
-                String reservationId = "RSV-" + UUID.randomUUID().toString().substring(0, 8);
-                productServiceClient.reserveStock(product.id(), itemRequest.quantity(), reservationId);
-                reservationIds.add(reservationId);
+               // String reservationId = "RSV-" + UUID.randomUUID().toString().substring(0, 8);
+//                productServiceClient.reserveStock(product.id(), itemRequest.quantity(), reservationId);
+//                reservationIds.add(reservationId);
+                productServiceClient.reserveStock(product.id(), itemRequest.quantity(), order.getReservationId());
+                reservationIds.add(order.getReservationId());
 
                 // Step 5: Create order item
                 OrderItemEntity orderItem = new OrderItemEntity();

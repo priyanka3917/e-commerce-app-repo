@@ -2,6 +2,7 @@ package com.orderService.controller;
 
 import com.orderService.dto.request.TrackingCreateRequestDTO;
 import com.orderService.dto.request.TrackingUpdateRequestDTO;
+import com.orderService.dto.response.TrackingHistoryDTO;
 import com.orderService.dto.response.TrackingResponseDTO;
 import com.orderService.service.TrackingService;
 import com.orderService.utils.GenericResponse;
@@ -10,6 +11,9 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/tracking")
@@ -36,5 +40,12 @@ public class TrackingController {
                 request.location()
         );
         return ResponseEntity.ok(GenericResponse.success(response));
+    }
+
+    @Operation(summary = "Get full tracking history for an order")
+    @GetMapping("/{orderId}/history")
+    public ResponseEntity<GenericResponse<List<TrackingHistoryDTO>>> getTrackingHistory(@PathVariable UUID orderId) {
+        List<TrackingHistoryDTO> history = trackingService.getTrackingHistory(orderId);
+        return ResponseEntity.ok(GenericResponse.success(history));
     }
 }

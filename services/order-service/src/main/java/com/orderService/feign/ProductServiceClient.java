@@ -26,7 +26,7 @@ public interface ProductServiceClient {
 
     @PutMapping("/api/v1/products/release")
     @CircuitBreaker(name = "productServiceCB", fallbackMethod = "releaseStockFallback")
-    void releaseStock(@RequestParam String reservationId);
+    void releaseStock(@RequestParam("reservationId") String reservationId);
 
     @PutMapping("/api/v1/products/confirm")
     @CircuitBreaker(name = "productServiceCB", fallbackMethod = "confirmReservationFallback")
