@@ -13,7 +13,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-//    @Mapping(target = "username", expression = "java(dto.username())")
+//    @Mapping(target = "userName", expression = "java(dto.userName())")
 //    @Mapping(target = "fullName", expression = "java(dto.fullName())")
 //    @Mapping(target = "email", expression = "java(dto.email())")
 //    @Mapping(target = "address", expression = "java(dto.address())")
@@ -25,7 +25,7 @@ public interface UserMapper {
     //GET ALL USER
     @Mappings({
             @Mapping(source = "id", target = "id"),
-            @Mapping(source = "username", target = "username"),
+            @Mapping(source = "userName", target = "userName"),
             @Mapping(source = "email", target = "email"),
             @Mapping(source = "address", target = "address"),
             @Mapping(source = "fullName", target = "fullName"),

@@ -9,7 +9,7 @@ import java.util.UUID;
 public record UserCreateRequestDTO(
 
         @Size(max =100)
-        String username,
+        String userName,
 
         @Email
         String email,

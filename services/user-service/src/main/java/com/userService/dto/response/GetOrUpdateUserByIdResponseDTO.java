@@ -3,7 +3,7 @@ package com.userService.dto.response;
 import java.time.Instant;
 
 public record GetOrUpdateUserByIdResponseDTO(
-        String username,
+        String userName,
         String email,
         String address,
         String fullName,

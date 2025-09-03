@@ -11,7 +11,7 @@ public record UpdateUserRequestDTO(
         UUID id,
 
         @Size(max =100)
-        String username,
+        String userName,
 
         @Email
         String email,

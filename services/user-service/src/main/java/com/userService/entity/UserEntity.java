@@ -25,7 +25,7 @@ public class UserEntity {
     private String fullName;
 
     @Column(nullable =false,unique = true)
-    private String username;
+    private String userName;
 
     @Column(nullable =false)
     private String password;
@@ -41,6 +41,4 @@ public class UserEntity {
 
     @UpdateTimestamp
     private Instant updatedAt;
-
-
 }
