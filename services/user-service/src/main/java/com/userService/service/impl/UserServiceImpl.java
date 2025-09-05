@@ -2,7 +2,7 @@ package com.userService.service.impl;
 
 import com.userService.dto.request.UpdateUserRequestDTO;
 import com.userService.dto.request.UserCreateRequestDTO;
-import com.userService.dto.response.GetAllUsersResponseDTO;
+import com.userService.dto.response.GetUsersResponseDTO;
 import com.userService.dto.response.GetOrUpdateUserByIdResponseDTO;
 import com.userService.dto.response.UserCreateResponseDTO;
 import com.userService.entity.UserEntity;
@@ -13,6 +13,7 @@ import com.userService.service.UserService;
 import com.userService.utils.PasswordUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -38,8 +39,18 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public List<GetAllUsersResponseDTO> getAllUser() {
+    public List<GetUsersResponseDTO> getAllUser() {
         return userMapper.getAllResponse(userRepository.findAll());
+    }
+
+    @Override
+    public GetUsersResponseDTO getUserDetailByUsername(String userName) {
+        UserEntity user = userRepository.findByUserName(userName);
+        if (user != null) {
+            return userMapper.getUserResponse(user);
+        }
+        throw new UsernameNotFoundException("User not found with userName: " + userName);
+
     }
 
     @Override

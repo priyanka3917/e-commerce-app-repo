@@ -1,13 +1,18 @@
 package com.userService.exception;
 
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
+import java.security.SignatureException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -16,8 +21,26 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request.getRequestURI());
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception exception, HttpServletRequest request) {
+        if(exception instanceof AccessDeniedException || exception instanceof AuthorizationDeniedException){
+            return buildErrorResponse(HttpStatus.valueOf(403), "You are not authorized to access this resource", request.getRequestURI());
+        }
+        if (exception instanceof BadCredentialsException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The username or password is incorrect", request.getRequestURI());
+        }
+
+        if (exception instanceof AccountStatusException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The account is locked", request.getRequestURI());
+        }
+        if (exception instanceof SignatureException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The JWT signature is invalid", request.getRequestURI());
+        }
+
+        if (exception instanceof ExpiredJwtException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The JWT token has expired", request.getRequestURI());
+        }
+        return buildErrorResponse(HttpStatus.valueOf(500), "Unknown internal server error.", request.getRequestURI());
+
     }
 
     @ExceptionHandler(ValidationException.class)
@@ -35,15 +58,6 @@ public class GlobalExceptionHandler {
         // Convert field errors to a single message or keep them as a map
         String message = "Validation failed for fields: " + fieldErrors.toString();
         return buildErrorResponse(HttpStatus.BAD_REQUEST, message, request.getRequestURI());
-    }
-//    @ExceptionHandler(RemoteServiceException.class)
-//    public ResponseEntity<Map<String, Object>> handleRemoteServiceException(RemoteServiceException ex, HttpServletRequest request) {
-//        return buildErrorResponse(HttpStatus.SERVICE_UNAVAILABLE, ex.getMessage(), request.getRequestURI());
-//    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, Object>> handleAccessDeniedException(AccessDeniedException ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.FORBIDDEN, "You don't have permission to access this resource", request.getRequestURI());
     }
 
     private ResponseEntity<Map<String, Object>> buildErrorResponse(HttpStatus status, String message, String path) {

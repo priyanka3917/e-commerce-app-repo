@@ -36,6 +36,9 @@ public class UserEntity {
     @Column(nullable =false)
     private String address;
 
+    @Column
+    private String roleName;
+
     @CreationTimestamp
     private Instant createdAt;
 

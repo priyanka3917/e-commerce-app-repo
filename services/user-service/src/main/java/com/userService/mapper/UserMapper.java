@@ -2,7 +2,7 @@ package com.userService.mapper;
 
 import com.userService.dto.request.UpdateUserRequestDTO;
 import com.userService.dto.request.UserCreateRequestDTO;
-import com.userService.dto.response.GetAllUsersResponseDTO;
+import com.userService.dto.response.GetUsersResponseDTO;
 import com.userService.dto.response.GetOrUpdateUserByIdResponseDTO;
 import com.userService.dto.response.UserCreateResponseDTO;
 import com.userService.entity.UserEntity;
@@ -13,7 +13,7 @@ import java.util.List;
 @Mapper(componentModel = "spring")
 public interface UserMapper {
 
-//    @Mapping(target = "userName", expression = "java(dto.userName())")
+    //    @Mapping(target = "userName", expression = "java(dto.userName())")
 //    @Mapping(target = "fullName", expression = "java(dto.fullName())")
 //    @Mapping(target = "email", expression = "java(dto.email())")
 //    @Mapping(target = "address", expression = "java(dto.address())")
@@ -32,7 +32,8 @@ public interface UserMapper {
             @Mapping(source = "createdAt", target = "createdAt"),
             @Mapping(source = "updatedAt", target = "updatedAt")
     })
-    List<GetAllUsersResponseDTO> getAllResponse(List<UserEntity> entities);
+    List<GetUsersResponseDTO> getAllResponse(List<UserEntity> entities);
+    GetUsersResponseDTO getUserResponse(UserEntity userEntity);
 
     //GET OR UPDATE USER
     GetOrUpdateUserByIdResponseDTO getOrUpdateUserByIdResponse(UserEntity entity);

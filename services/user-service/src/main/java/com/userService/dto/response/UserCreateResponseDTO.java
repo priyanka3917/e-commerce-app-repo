@@ -9,6 +9,7 @@ public record UserCreateResponseDTO(
         String email,
         String address,
         String fullName,
+        String roleName,
         Instant createdAt
 ) {
 }

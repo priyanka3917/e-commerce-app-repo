@@ -19,6 +19,8 @@ public record UserCreateRequestDTO(
         String password,
 
         @Size(max= 100)
-        String fullName
+        String fullName,
+
+        RoleType roleName
 ) {
 }

@@ -7,6 +7,7 @@ public record GetOrUpdateUserByIdResponseDTO(
         String email,
         String address,
         String fullName,
+        String roleName,
         Instant createdAt,
         Instant updatedAt
 ) {

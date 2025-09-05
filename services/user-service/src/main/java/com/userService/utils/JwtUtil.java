@@ -3,6 +3,8 @@ package com.userService.utils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
@@ -39,9 +41,13 @@ public class JwtUtil {
         return extractExpiration(token).before(new Date());
     }
 
-    public String generateToken(String username) {
+    public String generateToken(UserDetails user) {
         Map<String, Object> claims = new HashMap<>();
-        return createToken(claims, username);
+        claims.put("roles",user.getAuthorities()
+                .stream()
+                .map(GrantedAuthority::getAuthority)
+                .toList());
+        return createToken(claims, user.getUsername());
     }
 
     private String createToken(Map<String, Object> claims, String subject) {
