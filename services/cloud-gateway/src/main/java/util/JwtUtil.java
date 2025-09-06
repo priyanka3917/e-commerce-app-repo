@@ -1,14 +1,12 @@
-package com.userService.utils;
+package util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
-import java.util.Date;
 
 @Component
 public class JwtUtil {
@@ -20,20 +18,9 @@ public class JwtUtil {
         return Keys.hmacShaKeyFor(SECRET.getBytes());
     }
 
-    public String generateToken(String username) {
-        return Jwts.builder().subject(username)
-                .issuedAt(new Date())
-                .expiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(getSigningKey())
-                .compact();
-    }
-    public String generateToken(UserDetails userDetails) {
-        return generateToken(userDetails.getUsername());
-    }
-
     public boolean validateToken(String token) {
         try {
-            extractAllClaims(token);
+            extractAllClaims(token); // throws if invalid/expired
             return true;
         } catch (Exception e) {
             return false;
