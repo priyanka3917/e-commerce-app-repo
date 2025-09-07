@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -32,9 +33,18 @@ public class PaymentServiceImpl implements PaymentService {
     private final OrderRepo orderRepo;
 
     @Transactional
-    @CircuitBreaker(name = "paymentCB", fallbackMethod = "fallbackPayment")
+    @CircuitBreaker(name = "orderServiceCB", fallbackMethod = "fallbackPayment")
     @Retry(name = "paymentRetry")
     public PaymentResponseDTO makePayment(OrderEntity order, BigDecimal amount, PaymentMethod method) {
+        // Fetch existing payment for this order
+        PaymentEntity payment = paymentRepo.findByOrderId(order.getId())
+                .orElse(PaymentEntity.builder().order(order).build());
+
+        // If already SUCCESS, return existing (idempotent)
+        if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
+            return orderMapper.toPaymentResponseDTO(payment);
+        }
+
         boolean success = simulatePaymentSuccess();
         PaymentStatus status = success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;
 
@@ -97,6 +107,6 @@ public class PaymentServiceImpl implements PaymentService {
 
     }
     private boolean simulatePaymentSuccess() {
-        return Math.random() > 0.2;
+        return Math.random() < 0.6;
     }
 }

@@ -17,6 +17,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Slf4j
@@ -70,8 +71,13 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public void reserveStock(String productId, int quantity, String reservationId) {
-        if (stockReservationRepository.findByReservationId(reservationId).isPresent()) {
-            return; // Already reserved
+        // Check if this product is already reserved under the reservationId
+        Optional<StockReservationEntity> existing =
+                stockReservationRepository.findByReservationIdAndProductId(reservationId, productId);
+
+        if (existing.isPresent()) {
+            // Idempotent: already reserved, do nothing
+            return;
         }
 
         ProductEntity product = productRepository.findById(productId)
@@ -119,12 +125,12 @@ public class ProductServiceImpl implements ProductService {
     }
 
 
-    public void reduceStock(String id, int qty) {
-        ProductEntity p = productRepository.findById(id)
-                .orElseThrow(() -> new ValidationException("Product not found with id: "+ id));
-        if (p.getStock() < qty)
-            throw new ValidationException("Insufficient stock");
-        p.setStock(p.getStock() - qty);
-        productRepository.save(p);
-    }
+//    public void reduceStock(String id, int qty) {
+//        ProductEntity p = productRepository.findById(id)
+//                .orElseThrow(() -> new ValidationException("Product not found with id: "+ id));
+//        if (p.getStock() < qty)
+//            throw new ValidationException("Insufficient stock");
+//        p.setStock(p.getStock() - qty);
+//        productRepository.save(p);
+//    }
 }

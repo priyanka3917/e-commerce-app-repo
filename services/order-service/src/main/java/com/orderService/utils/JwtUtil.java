@@ -7,6 +7,7 @@ import org.springframework.stereotype.Component;
 
 import javax.crypto.SecretKey;
 import java.security.Key;
+import java.util.List;
 
 @Component
 public class JwtUtil {
@@ -34,5 +35,9 @@ public class JwtUtil {
         return Jwts.parser()
                 .verifyWith((SecretKey) getSigningKey())
                 .build().parseSignedClaims(token).getPayload();
+    }
+    public List<String> extractRoles(String token){
+        Claims claims = extractAllClaims(token);
+        return claims.get("roles",List.class);
     }
 }

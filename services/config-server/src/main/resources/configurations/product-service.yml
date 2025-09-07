@@ -5,3 +5,5 @@ spring:
 #      uuid-representation: standard
 server:
   port: 8092
+
+

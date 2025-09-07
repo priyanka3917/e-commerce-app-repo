@@ -1,14 +1,19 @@
 package com.productService.exception;
 
 import com.productService.exception.ValidationException;
+import io.jsonwebtoken.ExpiredJwtException;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AccountStatusException;
+import org.springframework.security.authentication.BadCredentialsException;
+import org.springframework.security.authorization.AuthorizationDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.nio.file.AccessDeniedException;
+import java.security.SignatureException;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,9 +22,28 @@ import java.util.Map;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> handleGenericException(Exception ex, HttpServletRequest request) {
-        return buildErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, ex.getMessage(), request.getRequestURI());
+    public ResponseEntity<Map<String, Object>> handleGenericException(Exception exception, HttpServletRequest request) {
+        if(exception instanceof AccessDeniedException || exception instanceof AuthorizationDeniedException){
+            return buildErrorResponse(HttpStatus.valueOf(403), "You are not authorized to access this resource", request.getRequestURI());
+        }
+        if (exception instanceof BadCredentialsException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The username or password is incorrect", request.getRequestURI());
+        }
+
+        if (exception instanceof AccountStatusException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The account is locked", request.getRequestURI());
+        }
+        if (exception instanceof SignatureException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The JWT signature is invalid", request.getRequestURI());
+        }
+
+        if (exception instanceof ExpiredJwtException) {
+            return buildErrorResponse(HttpStatus.valueOf(403), "The JWT token has expired", request.getRequestURI());
+        }
+        return buildErrorResponse(HttpStatus.valueOf(500), "Unknown internal server error.", request.getRequestURI());
+
     }
+
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<Map<String, Object>> handleCustomException(ValidationException ex, HttpServletRequest request) {

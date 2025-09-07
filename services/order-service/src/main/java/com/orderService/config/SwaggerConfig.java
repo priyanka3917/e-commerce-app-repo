@@ -1,4 +1,4 @@
-package com.userService.config;
+package com.orderService.config;
 
 import io.swagger.v3.oas.models.Components;
 import io.swagger.v3.oas.models.OpenAPI;
@@ -13,7 +13,7 @@ public class SwaggerConfig {
 
     @Bean
     public OpenAPI customOpenAPI(){
-        return new OpenAPI().info(new Info().title("User Service"))
+        return new OpenAPI().info(new Info().title("Order Service"))
                 .addSecurityItem(new SecurityRequirement().addList("TokenBased"))
                 .components(new Components().addSecuritySchemes("TokenBased", new SecurityScheme()
                         .name("TokenBased").type(SecurityScheme.Type.HTTP).scheme("bearer").bearerFormat("JWT")));

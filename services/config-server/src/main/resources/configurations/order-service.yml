@@ -26,5 +26,32 @@ feign:
     service:
       name: ${USER_SERVICE_NAME:user-service}
 
+resilience4j:
+  ratelimiter:
+    instances:
+      orderServiceRL:
+        limit-for-period: 5          # max calls per refresh period
+        limit-refresh-period: 10s    # refresh window
+        timeout-duration: 2s         # how long to wait for a permission
+  bulkhead:
+    instances:
+      orderServiceBH:
+        max-concurrent-calls: 10     # how many parallel calls allowed
+        max-wait-duration: 2s        # wait before rejecting
+  circuitbreaker:
+    instances:
+      orderServiceCB:
+        sliding-window-size: 10
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+  retry:
+    instances:
+      paymentRetry:
+        maxAttempts: 2
+        waitDuration: 1s
+        retryExceptions:
+          - java.lang.RuntimeException
+
+
       #      url: ${PRODUCT_SERVICE_URL:http://localhost:8092}
       #      path: ${PRODUCT_SERVICE_PATH:/api/v1/orders}

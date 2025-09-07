@@ -20,7 +20,7 @@ public class FeignConfig {
         return new CustomFeignErrorDecoder();
     }
 
-    // ✅ Forward Authorization header (JWT) in all Feign calls
+    // Forward Authorization header (JWT) in all Feign calls
     @Bean
     public RequestInterceptor requestInterceptor() {
         return new RequestInterceptor() {

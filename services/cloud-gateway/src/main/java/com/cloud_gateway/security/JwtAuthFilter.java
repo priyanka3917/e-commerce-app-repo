@@ -1,4 +1,4 @@
-package security;
+package com.cloud_gateway.security;
 
 import jakarta.ws.rs.core.HttpHeaders;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
-import util.JwtUtil;
+import com.cloud_gateway.util.JwtUtil;
 
 import java.util.List;
 
@@ -23,7 +23,10 @@ public class JwtAuthFilter implements GlobalFilter {
             "/api/v1/users/login",
             "/api/v1/users/sign-up",
             "/v3/api-docs",
-            "/swagger-ui"
+            "/swagger-ui",
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/webjars/"
     );
 
     @Override

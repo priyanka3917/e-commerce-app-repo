@@ -73,7 +73,6 @@ public class OrderServiceImpl implements OrderService {
         final OrderEntity savedOrder = order;
 
         List<OrderItemEntity> orderItems = new ArrayList<>();
-        List<String> reservationIds = new ArrayList<>();
 
         try {
             for (OrderItemRequestDTO itemRequest : request.items()) {
@@ -91,12 +90,7 @@ public class OrderServiceImpl implements OrderService {
                     throw new RuntimeException("Insufficient stock for product: " + itemRequest.productId());
                 }
 
-                // Step 4: Reserve stock (Saga step)
-               // String reservationId = "RSV-" + UUID.randomUUID().toString().substring(0, 8);
-//                productServiceClient.reserveStock(product.id(), itemRequest.quantity(), reservationId);
-//                reservationIds.add(reservationId);
                 productServiceClient.reserveStock(product.id(), itemRequest.quantity(), order.getReservationId());
-                reservationIds.add(order.getReservationId());
 
                 // Step 5: Create order item
                 OrderItemEntity orderItem = new OrderItemEntity();
@@ -118,20 +112,20 @@ public class OrderServiceImpl implements OrderService {
             order.setStatus(OrderStatus.CONFIRMED); // Saga success
             orderRepo.save(order);
 
+            productServiceClient.confirmReservation(order.getReservationId());
             return orderMapper.toOrderResponseDTO(order);
 
         } catch (Exception e) {
-            // Step 7: Compensating transaction (release reserved stock)
-            reservationIds.forEach(id -> {
-                try {
-                    productServiceClient.releaseStock(id);
-                } catch (Exception ex) {
-                    log.warn("Failed to release stock for reservationId: {}", id, ex);
-                }
-            });
-            //mark order as FAILED
+            // Compensate: release stock if reservation failed
+            try {
+                productServiceClient.releaseStock(order.getReservationId());
+            } catch (Exception ex) {
+                log.warn("Failed to release stock for reservation {}: {}", order.getReservationId(), ex.getMessage(), ex);
+            }
+
             order.setStatus(OrderStatus.FAILED);
             orderRepo.save(order);
+
             throw e;
         }
     }

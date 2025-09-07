@@ -1,4 +1,4 @@
-package util;
+package com.cloud_gateway.util;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
