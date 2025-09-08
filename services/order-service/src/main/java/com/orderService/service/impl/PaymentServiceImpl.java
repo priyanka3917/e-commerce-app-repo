@@ -17,10 +17,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
 import java.math.BigDecimal;
 import java.time.Instant;
-import java.util.Optional;
 import java.util.UUID;
 
 @Slf4j
@@ -36,9 +34,11 @@ public class PaymentServiceImpl implements PaymentService {
     @CircuitBreaker(name = "orderServiceCB", fallbackMethod = "fallbackPayment")
     @Retry(name = "paymentRetry")
     public PaymentResponseDTO makePayment(OrderEntity order, BigDecimal amount, PaymentMethod method) {
-        // Fetch existing payment for this order
+        // Fetch existing payment for this order (idempotent behavior)
         PaymentEntity payment = paymentRepo.findByOrderId(order.getId())
-                .orElse(PaymentEntity.builder().order(order).build());
+                .orElse(PaymentEntity.builder()
+                        .order(order)
+                        .build());
 
         // If already SUCCESS, return existing (idempotent)
         if (payment.getPaymentStatus() == PaymentStatus.SUCCESS) {
@@ -48,20 +48,36 @@ public class PaymentServiceImpl implements PaymentService {
         boolean success = simulatePaymentSuccess();
         PaymentStatus status = success ? PaymentStatus.SUCCESS : PaymentStatus.FAILED;
 
-        String txnId = "TXN-" + UUID.randomUUID().toString().substring(0, 8);
-        PaymentEntity entity = PaymentEntity.builder()
-                .order(order)
-                .amount(amount)
-                .paymentMethod(method)
-                .paymentStatus(PaymentStatus.SUCCESS) // for now assume success
-                .transactionId(txnId)
-                .paymentDate(Instant.now())
-                .build();
+        // Update existing payment or set new details
+        payment.setAmount(amount);
+        payment.setPaymentMethod(method);
+        payment.setPaymentStatus(status);
+        payment.setTransactionId("TXN-" + UUID.randomUUID().toString().substring(0, 8));
+        payment.setPaymentDate(Instant.now());
 
-        if (!success) {
-            throw new RuntimeException("Payment failure");
+        // Save and return
+        payment = paymentRepo.save(payment);
+
+        // If payment successful → confirm reservation
+        if (status == PaymentStatus.SUCCESS) {
+            try {
+                productServiceClient.confirmReservation(order.getReservationId());
+                order.setStatus(OrderStatus.CONFIRMED);
+            } catch (Exception e) {
+                log.error("Payment succeeded but failed to confirm stock: {}", e.getMessage(), e);
+                throw new RuntimeException("Payment succeeded but stock confirmation failed!");
+            }
+        } else {
+            try {
+                productServiceClient.releaseStock(order.getReservationId());
+                order.setStatus(OrderStatus.FAILED);
+            } catch (Exception e) {
+                log.warn("Payment failed but stock release failed for reservation {}", order.getReservationId(), e);
+            }
         }
-        return orderMapper.toPaymentResponseDTO(paymentRepo.save(entity));
+
+        orderRepo.save(order);
+        return orderMapper.toPaymentResponseDTO(payment);
     }
 
     @Transactional(readOnly = true)

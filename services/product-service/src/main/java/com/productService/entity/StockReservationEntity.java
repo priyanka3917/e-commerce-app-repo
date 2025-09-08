@@ -3,6 +3,7 @@ package com.productService.entity;
 import com.productService.enums.ReservationStatus;
 import lombok.*;
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.index.CompoundIndex;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 import java.time.Instant;
@@ -13,6 +14,7 @@ import java.time.Instant;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@CompoundIndex(name = "unique_reservation_product", def = "{'reservationId' : 1, 'productId': 1}", unique = true)
 public class StockReservationEntity {
     @Id
     private String reservationId;

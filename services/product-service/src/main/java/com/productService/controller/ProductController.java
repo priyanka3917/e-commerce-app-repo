@@ -2,6 +2,7 @@ package com.productService.controller;
 
 import com.productService.dto.request.ProductCreateRequestDTO;
 import com.productService.dto.request.ProductUpdateRequestDTO;
+import com.productService.dto.request.ReserveRequestDTO;
 import com.productService.dto.response.ProductResponseDTO;
 import com.productService.service.ProductService;
 import com.productService.utils.GenericResponse;
@@ -52,13 +53,11 @@ public class ProductController {
     public ResponseEntity<GenericResponse<String>> delete(@PathVariable String id) {
         return ResponseEntity.ok(GenericResponse.success(productService.deleteProductsById(id)));
     }
-    @PutMapping("/{productId}/reserve")
+    @PutMapping("/reserve")
     @Operation(summary = "Reserve Stock")
     public ResponseEntity<GenericResponse<Void>> reserveStock(
-            @PathVariable String productId,
-            @RequestParam int quantity,
-            @RequestParam String reservationId) {
-        productService.reserveStock(productId, quantity, reservationId);
+            @RequestBody ReserveRequestDTO request) {
+        productService.reserveStock(request);
         return ResponseEntity.ok().build();
     }
 

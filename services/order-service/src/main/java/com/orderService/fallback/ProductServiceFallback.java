@@ -1,5 +1,6 @@
 package com.orderService.fallback;
 
+import com.orderService.dto.request.ReserveRequestDTO;
 import com.orderService.dto.response.ProductResponseDTO;
 import com.orderService.feign.ProductServiceClient;
 import com.orderService.utils.GenericResponse;
@@ -30,8 +31,8 @@ public class ProductServiceFallback implements ProductServiceClient {
     }
 
     @Override
-    public void reserveStock(String productId, int quantity, String reservationId) {
-        log.warn("Fallback: unable to reserve stock for product {}." , productId);
+    public void reserveStock(ReserveRequestDTO reserveRequestDTO) {
+        log.warn("Fallback: unable to reserve stock with reservationID {}." , reserveRequestDTO.getReservationId());
     }
 
     @Override

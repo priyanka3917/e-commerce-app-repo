@@ -2,6 +2,8 @@ package com.orderService.service.impl;
 
 import com.orderService.dto.request.OrderCreateRequestDTO;
 import com.orderService.dto.request.OrderItemRequestDTO;
+import com.orderService.dto.request.ReserveItemDTO;
+import com.orderService.dto.request.ReserveRequestDTO;
 import com.orderService.dto.response.GetOrUpdateUserByIdResponseDTO;
 import com.orderService.dto.response.OrderResponseDTO;
 import com.orderService.dto.response.ProductResponseDTO;
@@ -73,7 +75,7 @@ public class OrderServiceImpl implements OrderService {
         final OrderEntity savedOrder = order;
 
         List<OrderItemEntity> orderItems = new ArrayList<>();
-
+        List<ReserveItemDTO> reserveItems = new ArrayList<>();
         try {
             for (OrderItemRequestDTO itemRequest : request.items()) {
                 // Step 3: Fetch product details
@@ -90,7 +92,8 @@ public class OrderServiceImpl implements OrderService {
                     throw new RuntimeException("Insufficient stock for product: " + itemRequest.productId());
                 }
 
-                productServiceClient.reserveStock(product.id(), itemRequest.quantity(), order.getReservationId());
+                // Prepare for bulk reservation
+                reserveItems.add(new ReserveItemDTO(product.id(), itemRequest.quantity()));
 
                 // Step 5: Create order item
                 OrderItemEntity orderItem = new OrderItemEntity();
@@ -102,6 +105,11 @@ public class OrderServiceImpl implements OrderService {
                 orderItems.add(orderItem);
             }
 
+            // Step 4: Call bulk reservation once
+            ReserveRequestDTO reserveRequest = new ReserveRequestDTO(order.getReservationId(), reserveItems);
+            productServiceClient.reserveStock(reserveRequest);
+
+
             // Step 6: Finalize order
             BigDecimal totalAmount = orderItems.stream()
                     .map(item -> item.getUnitPrice().multiply(BigDecimal.valueOf(item.getQuantity())))
@@ -109,10 +117,9 @@ public class OrderServiceImpl implements OrderService {
 
             order.setTotalAmount(totalAmount);
             order.setItems(orderItems);
-            order.setStatus(OrderStatus.CONFIRMED); // Saga success
+            order.setStatus(OrderStatus.PENDING); // still pending, will confirm after payment
             orderRepo.save(order);
-
-            productServiceClient.confirmReservation(order.getReservationId());
+            
             return orderMapper.toOrderResponseDTO(order);
 
         } catch (Exception e) {
@@ -176,7 +183,7 @@ public class OrderServiceImpl implements OrderService {
     @Override
     public Page<OrderResponseDTO> getOrdersDetailByUserId(UUID id, int offset, int size) {
         Pageable pageable = PageRequest.of(offset, size);
-        Page<OrderEntity> orders = orderRepo.findByUserId(id,pageable);
+        Page<OrderEntity> orders = orderRepo.findByUserId(id, pageable);
 
         if (orders.isEmpty()) {
             throw new ValidationException("No orders found for the id: " + id);
