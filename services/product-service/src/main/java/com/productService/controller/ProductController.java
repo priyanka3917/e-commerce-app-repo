@@ -58,7 +58,7 @@ public class ProductController {
     public ResponseEntity<GenericResponse<Void>> reserveStock(
             @RequestBody ReserveRequestDTO request) {
         productService.reserveStock(request);
-        return ResponseEntity.ok().build();
+        return ResponseEntity.ok(GenericResponse.success(null));
     }
 
     @PutMapping("/release")

@@ -70,7 +70,7 @@ public class PaymentServiceImpl implements PaymentService {
         } else {
             try {
                 productServiceClient.releaseStock(order.getReservationId());
-                order.setStatus(OrderStatus.FAILED);
+                 order.setStatus(OrderStatus.FAILED);
             } catch (Exception e) {
                 log.warn("Payment failed but stock release failed for reservation {}", order.getReservationId(), e);
             }

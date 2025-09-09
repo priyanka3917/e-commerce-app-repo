@@ -15,6 +15,11 @@ server:
   port: 8091
 
 feign:
+  client:
+    config:
+      default:
+        connectTimeout: 5000  # Sets the connection timeout to 5 seconds
+        readTimeout: 10000
   retryer:
     maxAttempts: 3
     period: 2000
