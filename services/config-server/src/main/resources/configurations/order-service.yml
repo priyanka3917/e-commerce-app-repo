@@ -57,6 +57,12 @@ resilience4j:
         retryExceptions:
           - java.lang.RuntimeException
 
+springdoc:
+  api-docs:
+    path: /v3/api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+
 
       #      url: ${PRODUCT_SERVICE_URL:http://localhost:8092}
       #      path: ${PRODUCT_SERVICE_PATH:/api/v1/orders}

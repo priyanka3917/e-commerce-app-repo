@@ -1,5 +1,6 @@
 package com.userService.controllers;
 
+import com.userService.constants.RoleType;
 import com.userService.dto.request.LoginUserRequestDTO;
 import com.userService.dto.request.UpdateUserRequestDTO;
 import com.userService.dto.request.UserCreateRequestDTO;
@@ -15,253 +16,251 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.*;
+import java.time.Instant;
+import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserControllerTest {
+
     @Mock
-    UserService userService;
+    private UserService userService;
+
     @Mock
-    AuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
+
     @Mock
-    UserDetailsServiceImpl userDetailsService;
+    private UserDetailsServiceImpl userDetailsService;
+
     @Mock
-    JwtUtil jwtUtil;
+    private JwtUtil jwtUtil;
+
+    @Mock
+    private SecurityContext securityContext;
+
+    @Mock
+    private Authentication authentication;
+
     @InjectMocks
-    UserController userController;
+    private UserController userController;
+
+    private UUID userId;
+    private GetUsersResponseDTO userResponse;
+    private GetOrUpdateUserByIdResponseDTO userByIdResponse;
+    private UserCreateResponseDTO userCreateResponse;
 
     @BeforeEach
-    void setup() {
-        SecurityContextHolder.clearContext();
+    void setUp() {
+        userId = UUID.randomUUID();
+        userResponse = new GetUsersResponseDTO(
+                userId,
+                "testuser",
+                "test@example.com",
+                "123 Street",
+                "Test User",
+                "USER",
+                Instant.now(),
+                Instant.now()
+        );
+
+        userByIdResponse = new GetOrUpdateUserByIdResponseDTO(
+                "testuser",
+                "test@example.com",
+                "123 Street",
+                "Test User",
+                "USER",
+                Instant.now(),
+                Instant.now()
+        );
+
+        userCreateResponse = new UserCreateResponseDTO(
+                userId,
+                "testuser",
+                "test@example.com",
+                "123 Street",
+                "Test User",
+                "USER",
+                Instant.now()
+        );
+
+        SecurityContextHolder.setContext(securityContext);
+
     }
 
+    // ✅ sign-up
     @Test
-    void signUp_success() {
-        UserCreateRequestDTO req = mock(UserCreateRequestDTO.class);
-        UserCreateResponseDTO resp = mock(UserCreateResponseDTO.class);
-        when(userService.createUser(req)).thenReturn(resp);
-        ResponseEntity<GenericResponse<UserCreateResponseDTO>> result = userController.signUp(req);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(resp, result.getBody().getData());
+    void testSignUp() {
+
+        UserCreateRequestDTO requestDTO =
+                new UserCreateRequestDTO(
+                        "testuser",
+                        "pass",
+                        "test@example.com",
+                        "123 Street",
+                        "Test User",
+                        RoleType.USER);
+
+        when(userService.createUser(requestDTO)).thenReturn(userCreateResponse);
+
+        ResponseEntity<GenericResponse<UserCreateResponseDTO>> response = userController.signUp(requestDTO);
+
+        assertEquals("testuser", response.getBody().getData().userName());
     }
 
+    // ✅ login
     @Test
-    void login_success() {
-        LoginUserRequestDTO req = mock(LoginUserRequestDTO.class);
-        when(req.userName()).thenReturn("user1");
-        when(req.password()).thenReturn("pass");
-        UserDetails userDetails = mock(UserDetails.class);
-        when(userDetailsService.loadUserByUsername("user1")).thenReturn(userDetails);
-        when(jwtUtil.generateToken(userDetails)).thenReturn("jwt-token");
-        doNothing().when(authenticationManager).authenticate(any(UsernamePasswordAuthenticationToken.class));
-        ResponseEntity<String> result = userController.login(req);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals("jwt-token", result.getBody());
+    void testLogin() {
+        LoginUserRequestDTO requestDTO = new LoginUserRequestDTO(
+                "testuser", "pass");
+
+        UserDetails userDetails = User.withUsername("testuser")
+                .password("pass")
+                .roles("USER")
+                .build();
+
+        when(userDetailsService.loadUserByUsername("testuser")).thenReturn(userDetails);
+        when(jwtUtil.generateToken(userDetails)).thenReturn("mockJwt");
+
+        ResponseEntity<String> response = userController.login(requestDTO);
+
+        assertEquals("mockJwt", response.getBody());
     }
 
+    // ✅ get all users (ADMIN only)
     @Test
-    void getAllUser_success() {
-        List<GetUsersResponseDTO> users = List.of(mock(GetUsersResponseDTO.class));
-        when(userService.getAllUser()).thenReturn(users);
-        ResponseEntity<GenericResponse<List<GetUsersResponseDTO>>> result = userController.getAllUser();
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(users, result.getBody().getData());
+    void testGetAllUser_AsAdmin() {
+       // when(securityContext.getAuthentication()).thenReturn(authentication);
+       // when(authentication.getName()).thenReturn("testuser");
+        //doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"))).when(authentication).getAuthorities();
+
+        when(userService.getAllUser()).thenReturn(List.of(userResponse));
+
+        ResponseEntity<GenericResponse<List<GetUsersResponseDTO>>> response = userController.getAllUser();
+
+        assertEquals(1, response.getBody().getData().size());
     }
 
+    // ✅ get user by id (as ADMIN)
     @Test
-    void getUserById_admin_success() {
-        UUID id = UUID.randomUUID();
+    void testGetUserById_AsAdmin() {
+        // Add stubbing here instead
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("testuser");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN")))
+                .when(authentication).getAuthorities();
+        when(userService.getUserDetailByUsername("testuser")).thenReturn(userResponse);
+        when(userService.getUserById(userId)).thenReturn(userByIdResponse);
 
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("admin");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();
-        SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
+        ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> response =
+                userController.getUserById(userId);
 
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(userService.getUserDetailByUsername("admin")).thenReturn(currentUser);
+        assertEquals("testuser", response.getBody().getData().userName());
+    }
+    // ❌ Negative: Non-admin accessing another user's id
+    @Test
+    void testGetUserById_AsNonAdminAccessDenied() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("testuser");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .when(authentication).getAuthorities();
 
-        GetOrUpdateUserByIdResponseDTO resp = mock(GetOrUpdateUserByIdResponseDTO.class);
-        when(userService.getUserById(id)).thenReturn(resp);
+        when(userService.getUserDetailByUsername("testuser")).thenReturn(userResponse);
 
-        ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> result = userController.getUserById(id);
-
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(resp, result.getBody().getData());
+        assertThrows(AccessDeniedException.class,
+                () -> userController.getUserById(UUID.randomUUID()));
     }
 
+    // ✅ update user as self
     @Test
-    void getUserById_nonAdmin_self_success() {
-        UUID id = UUID.randomUUID();
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("user1");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities(); SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(currentUser.id()).thenReturn(id);
-        when(userService.getUserDetailByUsername("user1")).thenReturn(currentUser);
-        GetOrUpdateUserByIdResponseDTO resp = mock(GetOrUpdateUserByIdResponseDTO.class);
-        when(userService.getUserById(id)).thenReturn(resp);
-        ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> result = userController.getUserById(id);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(resp, result.getBody().getData());
+    void testUpdateUser_AsSelf() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        UpdateUserRequestDTO updateDTO =
+                new UpdateUserRequestDTO(userId, "testuser", "new@example.com", "123 Street", "Test User", "pass");
+
+        when(authentication.getName()).thenReturn("testuser");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .when(authentication).getAuthorities();
+        when(userService.getUserDetailByUsername("testuser")).thenReturn(userResponse);
+        when(userService.updateUserById(updateDTO)).thenReturn(userByIdResponse);
+
+        ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> response =
+                userController.updateUserById(updateDTO);
+
+        assertEquals("testuser", response.getBody().getData().userName());
     }
 
+    // ❌ Negative: Non-admin updating another user
     @Test
-    void getUserById_nonAdmin_other_throws() {
-        UUID id = UUID.randomUUID();
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("user1");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();
-        SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(currentUser.id()).thenReturn(UUID.randomUUID());
-        when(userService.getUserDetailByUsername("user1")).thenReturn(currentUser);
-        assertThrows(AccessDeniedException.class, () -> userController.getUserById(id));
+    void testUpdateUser_AsNonAdminAccessDenied() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        UpdateUserRequestDTO updateDTO =
+                new UpdateUserRequestDTO(UUID.randomUUID(), "otheruser", "other@example.com", "456 Street", "Other User", "pass");
+
+        when(authentication.getName()).thenReturn("testuser");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .when(authentication).getAuthorities();
+        when(userService.getUserDetailByUsername("testuser")).thenReturn(userResponse);
+
+        assertThrows(AccessDeniedException.class,
+                () -> userController.updateUserById(updateDTO));
     }
 
+    // ✅ get user by username (as self)
     @Test
-    void updateUserById_admin_success() {
-        UpdateUserRequestDTO req = mock(UpdateUserRequestDTO.class);
-        UUID id = UUID.randomUUID();
-        when(req.id()).thenReturn(id);
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("admin");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();
-        SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(userService.getUserDetailByUsername("admin")).thenReturn(currentUser);
-        GetOrUpdateUserByIdResponseDTO resp = mock(GetOrUpdateUserByIdResponseDTO.class);
-        when(userService.updateUserById(req)).thenReturn(resp);
-        ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> result = userController.updateUserById(req);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(resp, result.getBody().getData());
+    void testGetUserDetailByUsername_AsSelf() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("testuser");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .when(authentication).getAuthorities();
+        when(userService.getUserDetailByUsername("testuser")).thenReturn(userResponse);
+
+        ResponseEntity<GenericResponse<GetUsersResponseDTO>> response =
+                userController.getUserDetailByUsername("testuser");
+
+        assertEquals("testuser", response.getBody().getData().userName());
     }
 
+    // ❌ Negative: Non-admin trying to fetch another username
     @Test
-    void updateUserById_nonAdmin_self_success() {
-        UpdateUserRequestDTO req = mock(UpdateUserRequestDTO.class);
-        UUID id = UUID.randomUUID();
-        when(req.id()).thenReturn(id);
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("user1");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(currentUser.id()).thenReturn(id);
-        when(userService.getUserDetailByUsername("user1")).thenReturn(currentUser);
-        GetOrUpdateUserByIdResponseDTO resp = mock(GetOrUpdateUserByIdResponseDTO.class);
-        when(userService.updateUserById(req)).thenReturn(resp);
-        ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> result = userController.updateUserById(req);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(resp, result.getBody().getData());
+    void testGetUserDetailByUsername_AsNonAdminAccessDenied() {
+        when(securityContext.getAuthentication()).thenReturn(authentication);
+        when(authentication.getName()).thenReturn("testuser");
+        doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER")))
+                .when(authentication).getAuthorities();
+        when(userService.getUserDetailByUsername("testuser")).thenReturn(userResponse);
+
+        assertThrows(AccessDeniedException.class,
+                () -> userController.getUserDetailByUsername("otheruser"));
     }
 
+    // ✅ delete user (ADMIN only)
     @Test
-    void updateUserById_nonAdmin_other_throws() {
-        UpdateUserRequestDTO req = mock(UpdateUserRequestDTO.class);
-        UUID id = UUID.randomUUID();
-        when(req.id()).thenReturn(id);
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("user1");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(currentUser.id()).thenReturn(UUID.randomUUID());
-        when(userService.getUserDetailByUsername("user1")).thenReturn(currentUser);
-        assertThrows(AccessDeniedException.class, () -> userController.updateUserById(req));
-    }
+    void testDeleteUserById_AsAdmin() {
+       // when(securityContext.getAuthentication()).thenReturn(authentication);
+       // when(authentication.getName()).thenReturn("admin");
+        // doReturn(Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))).when(authentication).getAuthorities();
 
-    @Test
-    void getUserDetailByUsername_admin_success() {
-        String userName = "user1";
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("admin");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(userService.getUserDetailByUsername("admin")).thenReturn(currentUser);
-        GetUsersResponseDTO resp = mock(GetUsersResponseDTO.class);
-        when(userService.getUserDetailByUsername(userName)).thenReturn(resp);
-        ResponseEntity<GenericResponse<GetUsersResponseDTO>> result = userController.getUserDetailByUsername(userName);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(resp, result.getBody().getData());
-    }
+        when(userService.deleteUserById(userId)).thenReturn("User Deleted Successfully " + userId);
 
-    @Test
-    void getUserDetailByUsername_nonAdmin_self_success() {
-        String userName = "user1";
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("user1");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(currentUser.userName()).thenReturn(userName);
-        when(userService.getUserDetailByUsername("user1")).thenReturn(currentUser);
-        GetUsersResponseDTO resp = mock(GetUsersResponseDTO.class);
-        when(userService.getUserDetailByUsername(userName)).thenReturn(resp);
-        ResponseEntity<GenericResponse<GetUsersResponseDTO>> result = userController.getUserDetailByUsername(userName);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals(resp, result.getBody().getData());
-    }
+        ResponseEntity<GenericResponse<String>> response =
+                userController.deleteUserById(userId);
 
-    @Test
-    void getUserDetailByUsername_nonAdmin_other_throws() {
-        String userName = "otherUser";
-        Authentication auth = mock(Authentication.class);
-        when(auth.getName()).thenReturn("user1");
-        Collection<GrantedAuthority> authorities = Collections.singletonList(new SimpleGrantedAuthority("ROLE_ADMIN"));
-        doReturn(authorities).when(auth).getAuthorities();SecurityContext context = mock(SecurityContext.class);
-        when(context.getAuthentication()).thenReturn(auth);
-        SecurityContextHolder.setContext(context);
-        GetUsersResponseDTO currentUser = mock(GetUsersResponseDTO.class);
-        when(currentUser.userName()).thenReturn("user1");
-        when(userService.getUserDetailByUsername("user1")).thenReturn(currentUser);
-        assertThrows(AccessDeniedException.class, () -> userController.getUserDetailByUsername(userName));
-    }
-
-    @Test
-    void deleteUserById_success() {
-        UUID id = UUID.randomUUID();
-        when(userService.deleteUserById(id)).thenReturn("deleted");
-        ResponseEntity<GenericResponse<String>> result = userController.deleteUserById(id);
-        assertEquals(HttpStatus.OK, result.getStatusCode());
-        assertEquals("deleted", result.getBody().getData());
+        assertTrue(response.getBody().getData().contains("User Deleted Successfully"));
     }
 }

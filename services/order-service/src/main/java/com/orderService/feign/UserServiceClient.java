@@ -2,6 +2,7 @@ package com.orderService.feign;
 
 import com.orderService.config.FeignConfig;
 import com.orderService.dto.response.GetOrUpdateUserByIdResponseDTO;
+import com.orderService.dto.response.GetUsersResponseDTO;
 import com.orderService.fallback.UserServiceFallback;
 import com.orderService.utils.GenericResponse;
 import io.github.resilience4j.bulkhead.annotation.Bulkhead;
@@ -22,4 +23,9 @@ public interface UserServiceClient {
     @RateLimiter(name = "orderServiceRL")
     @Bulkhead(name = "orderServiceBH", type = Bulkhead.Type.SEMAPHORE)
     public ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> getUserById(@PathVariable UUID id);
+    @GetMapping("/api/v1/users/userName/{userName}")
+    @CircuitBreaker(name = "orderServiceCB")
+    @RateLimiter(name = "orderServiceRL")
+    @Bulkhead(name = "orderServiceBH", type = Bulkhead.Type.SEMAPHORE)
+    ResponseEntity<GenericResponse<GetUsersResponseDTO>> getUserDetailByUsername(@PathVariable String userName);
 }

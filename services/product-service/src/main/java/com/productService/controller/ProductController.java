@@ -12,6 +12,10 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -23,9 +27,12 @@ public class ProductController {
     @Autowired
     ProductService productService;
 
+
+
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
     @Operation(summary = "Create new Product.")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<ProductResponseDTO>> createProduct(@Valid @RequestBody ProductCreateRequestDTO req) {
         return ResponseEntity.ok(GenericResponse.success(productService.createProduct(req)));
     }
@@ -44,17 +51,20 @@ public class ProductController {
 
     @PatchMapping("/{id}")
     @Operation(summary = "Update Product")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<ProductResponseDTO>> updateProduct(@PathVariable String id, @RequestBody ProductUpdateRequestDTO req) {
         return ResponseEntity.ok(GenericResponse.success(productService.updateProducts(id,req)));
     }
 
     @DeleteMapping("/{id}")
     @Operation(summary = "Delete product by id.")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<String>> delete(@PathVariable String id) {
         return ResponseEntity.ok(GenericResponse.success(productService.deleteProductsById(id)));
     }
     @PutMapping("/reserve")
     @Operation(summary = "Reserve Stock")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<Void>> reserveStock(
             @RequestBody ReserveRequestDTO request) {
         productService.reserveStock(request);
@@ -62,11 +72,13 @@ public class ProductController {
     }
 
     @PutMapping("/release")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<Void>> releaseStock(@RequestParam String reservationId) {
         productService.releaseStock(reservationId);
         return ResponseEntity.ok().build();
     }
     @PutMapping("/confirm")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<Void>> confirmReservation(@RequestParam String reservationId) {
         productService.confirmReservation(reservationId);
         return ResponseEntity.ok().build();

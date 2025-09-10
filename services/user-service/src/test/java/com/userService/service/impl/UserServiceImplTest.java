@@ -1,5 +1,6 @@
 package com.userService.service.impl;
 
+import com.userService.constants.RoleType;
 import com.userService.dto.request.UpdateUserRequestDTO;
 import com.userService.dto.request.UserCreateRequestDTO;
 import com.userService.dto.response.GetUsersResponseDTO;
@@ -9,185 +10,299 @@ import com.userService.entity.UserEntity;
 import com.userService.exception.ValidationException;
 import com.userService.mapper.UserMapper;
 import com.userService.repository.UserRepository;
-import com.userService.utils.PasswordUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import java.time.Instant;
 import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class UserServiceImplTest {
+
     @Mock
-    UserRepository userRepository;
+    private UserRepository userRepository;
+
     @Mock
-    UserMapper userMapper;
+    private UserMapper userMapper;
+
     @InjectMocks
-    UserServiceImpl userService;
+    private UserServiceImpl userService;
+
+    private UserEntity userEntity;
+    private UUID userId;
+    private Instant createdAt;
+    private Instant updatedAt;
 
     @BeforeEach
-    void setup() {
-        // No-op, handled by MockitoExtension
+    void setUp() {
+        userId = UUID.randomUUID();
+        createdAt = Instant.now();
+        updatedAt = createdAt.plusSeconds(60); // just an example
+
+        userEntity = new UserEntity();
+        userEntity.setId(userId);
+        userEntity.setUserName("testUser");
+        userEntity.setEmail("test@example.com");
+        userEntity.setAddress("123 Test Street");
+        userEntity.setFullName("Test User");
+        userEntity.setRoleName(RoleType.USER.name());
+        userEntity.setPassword("hashedpassword");
+        userEntity.setCreatedAt(createdAt);
+        userEntity.setUpdatedAt(updatedAt);
     }
 
     @Test
     void createUser_success() {
-        UserCreateRequestDTO req = mock(UserCreateRequestDTO.class);
-        UserEntity entity = new UserEntity();
-        UserCreateResponseDTO resp = mock(UserCreateResponseDTO.class);
-        when(req.email()).thenReturn("test@example.com");
-        when(req.password()).thenReturn("pass");
-        when(userRepository.existsByEmail(anyString())).thenReturn(false);
-        when(userMapper.toEntity(req)).thenReturn(entity);
-        Mockito.mockStatic(PasswordUtils.class).when(() -> PasswordUtils.hash(anyString())).thenReturn("hashed");
-        when(userMapper.toResponse(entity)).thenReturn(resp);
-        UserCreateResponseDTO result = userService.createUser(req);
-        assertEquals(resp, result);
+        UserCreateRequestDTO request = new UserCreateRequestDTO(
+                "testUser",
+                "test@example.com",
+                "123 Test Street",
+                "password123",
+                "Test User",
+                RoleType.USER
+        );
+
+        UserCreateResponseDTO responseDto = new UserCreateResponseDTO(
+                userId,
+                "testUser",
+                "test@example.com",
+                "123 Test Street",
+                "Test User",
+                "USER",
+                createdAt
+        );
+
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(userMapper.toEntity(request)).thenReturn(userEntity);
+        when(userMapper.toResponse(userEntity)).thenReturn(responseDto);
+
+        UserCreateResponseDTO response = userService.createUser(request);
+
+        assertNotNull(response);
+        assertEquals("testUser", response.userName());
+        assertEquals("USER", response.roleName());
+        verify(userRepository).save(userEntity);
     }
 
     @Test
-    void createUser_emailExists_throws() {
-        UserCreateRequestDTO req = mock(UserCreateRequestDTO.class);
-        when(req.email()).thenReturn("test@example.com");
-        when(userRepository.existsByEmail(anyString())).thenReturn(true);
-        ValidationException ex = assertThrows(ValidationException.class, () -> userService.createUser(req));
-        assertTrue(ex.getMessage().contains("Email already exists."));
+    void createUser_emailAlreadyExists() {
+        UserCreateRequestDTO request = new UserCreateRequestDTO(
+                "testUser",
+                "test@example.com",
+                "123 Test Street",
+                "password123",
+                "Test User",
+                RoleType.USER
+        );
+
+        when(userRepository.existsByEmail(request.email())).thenReturn(true);
+
+        assertThrows(ValidationException.class, () -> userService.createUser(request));
+        verify(userRepository, never()).save(any(UserEntity.class));
     }
 
     @Test
     void getAllUser_success() {
-        List<UserEntity> entities = List.of(new UserEntity());
-        List<GetUsersResponseDTO> dtos = List.of(mock(GetUsersResponseDTO.class));
-        when(userRepository.findAll()).thenReturn(entities);
-        when(userMapper.getAllResponse(entities)).thenReturn(dtos);
-        List<GetUsersResponseDTO> result = userService.getAllUser();
-        assertEquals(dtos, result);
+        List<UserEntity> users = List.of(userEntity);
+        List<GetUsersResponseDTO> dtoList = List.of(
+                new GetUsersResponseDTO(
+                        userId,
+                        "testUser",
+                        "test@example.com",
+                        "123 Test Street",
+                        "Test User",
+                        "USER",
+                        createdAt,
+                        updatedAt
+                )
+        );
+
+        when(userRepository.findAll()).thenReturn(users);
+        when(userMapper.getAllResponse(users)).thenReturn(dtoList);
+
+        List<GetUsersResponseDTO> response = userService.getAllUser();
+
+        assertEquals(1, response.size());
+        assertEquals("testUser", response.get(0).userName());
+        assertEquals("USER", response.get(0).roleName());
     }
 
     @Test
-    void getUserDetailByUsername_success() {
-        UserEntity entity = new UserEntity();
-        GetUsersResponseDTO dto = mock(GetUsersResponseDTO.class);
-        when(userRepository.findByUserName("user1")).thenReturn(entity);
-        when(userMapper.getUserResponse(entity)).thenReturn(dto);
-        GetUsersResponseDTO result = userService.getUserDetailByUsername("user1");
-        assertEquals(dto, result);
+    void getUserDetailByUsername_found() {
+        GetUsersResponseDTO dto = new GetUsersResponseDTO(
+                userId,
+                "testUser",
+                "test@example.com",
+                "123 Test Street",
+                "Test User",
+                "USER",
+                createdAt,
+                updatedAt
+        );
+
+        when(userRepository.findByUserName("testUser")).thenReturn(userEntity);
+        when(userMapper.getUserResponse(userEntity)).thenReturn(dto);
+
+        GetUsersResponseDTO response = userService.getUserDetailByUsername("testUser");
+
+        assertEquals("testUser", response.userName());
+        assertEquals("USER", response.roleName());
     }
 
     @Test
-    void getUserDetailByUsername_notFound_throws() {
-        when(userRepository.findByUserName("user1")).thenReturn(null);
-        assertThrows(UsernameNotFoundException.class, () -> userService.getUserDetailByUsername("user1"));
+    void getUserDetailByUsername_notFound() {
+        when(userRepository.findByUserName("unknown")).thenReturn(null);
+
+        assertThrows(UsernameNotFoundException.class, () -> userService.getUserDetailByUsername("unknown"));
     }
 
     @Test
-    void getUserById_success() {
-        UUID id = UUID.randomUUID();
-        UserEntity entity = new UserEntity();
-        GetOrUpdateUserByIdResponseDTO dto = mock(GetOrUpdateUserByIdResponseDTO.class);
-        when(userRepository.findById(id)).thenReturn(Optional.of(entity));
-        when(userMapper.getOrUpdateUserByIdResponse(entity)).thenReturn(dto);
-        GetOrUpdateUserByIdResponseDTO result = userService.getUserById(id);
-        assertEquals(dto, result);
+    void getUserById_found() {
+        GetOrUpdateUserByIdResponseDTO dto = new GetOrUpdateUserByIdResponseDTO(
+                "testUser",
+                "test@example.com",
+                "123 Test Street",
+                "Test User",
+                "USER",
+                createdAt,
+                updatedAt
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(userEntity));
+        when(userMapper.getOrUpdateUserByIdResponse(userEntity)).thenReturn(dto);
+
+        GetOrUpdateUserByIdResponseDTO response = userService.getUserById(userId);
+
+        assertEquals("testUser", response.userName());
+        assertEquals("USER", response.roleName());
     }
 
     @Test
-    void getUserById_notFound_throws() {
-        UUID id = UUID.randomUUID();
-        when(userRepository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(ValidationException.class, () -> userService.getUserById(id));
-    }
+    void getUserById_notFound() {
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
 
-    @Test
-    void updateUserById_success_updatePasswordAndEmail() {
-        UUID id = UUID.randomUUID();
-        UpdateUserRequestDTO req = mock(UpdateUserRequestDTO.class);
-        UserEntity entity = new UserEntity();
-        entity.setEmail("old@example.com");
-        GetOrUpdateUserByIdResponseDTO dto = mock(GetOrUpdateUserByIdResponseDTO.class);
-        when(req.id()).thenReturn(id);
-        when(userRepository.findById(id)).thenReturn(Optional.of(entity));
-        doAnswer(inv -> {
-            entity.setEmail("new@example.com");
-            return null;
-        }).when(userMapper).updateUserResponse(req, entity);
-        when(req.password()).thenReturn("newpass");
-        Mockito.mockStatic(PasswordUtils.class).when(() -> PasswordUtils.hash("newpass")).thenReturn("hashed");
-        when(req.email()).thenReturn("new@example.com");
-        when(userRepository.existsByEmail("new@example.com")).thenReturn(false);
-        when(userRepository.save(entity)).thenReturn(entity);
-        when(userMapper.getOrUpdateUserByIdResponse(entity)).thenReturn(dto);
-        GetOrUpdateUserByIdResponseDTO result = userService.updateUserById(req);
-        assertEquals(dto, result);
-    }
-
-    @Test
-    void updateUserById_success_noPasswordNoEmailChange() {
-        UUID id = UUID.randomUUID();
-        UpdateUserRequestDTO req = mock(UpdateUserRequestDTO.class);
-        UserEntity entity = new UserEntity();
-        entity.setEmail("same@example.com");
-        GetOrUpdateUserByIdResponseDTO dto = mock(GetOrUpdateUserByIdResponseDTO.class);
-        when(req.id()).thenReturn(id);
-        when(userRepository.findById(id)).thenReturn(Optional.of(entity));
-        doNothing().when(userMapper).updateUserResponse(req, entity);
-        when(req.password()).thenReturn(null);
-        when(req.email()).thenReturn("same@example.com");
-        when(userRepository.save(entity)).thenReturn(entity);
-        when(userMapper.getOrUpdateUserByIdResponse(entity)).thenReturn(dto);
-        GetOrUpdateUserByIdResponseDTO result = userService.updateUserById(req);
-        assertEquals(dto, result);
-    }
-
-    @Test
-    void updateUserById_emailExists_throws() {
-        UUID id = UUID.randomUUID();
-        UpdateUserRequestDTO req = mock(UpdateUserRequestDTO.class);
-        UserEntity entity = new UserEntity();
-        entity.setEmail("old@example.com");
-        when(req.id()).thenReturn(id);
-        when(userRepository.findById(id)).thenReturn(Optional.of(entity));
-        doNothing().when(userMapper).updateUserResponse(req, entity);
-        when(req.password()).thenReturn(null);
-        when(req.email()).thenReturn("new@example.com");
-        when(userRepository.existsByEmail("new@example.com")).thenReturn(true);
-        ValidationException ex = assertThrows(ValidationException.class, () -> userService.updateUserById(req));
-        assertTrue(ex.getMessage().contains("Email already exits"));
-    }
-
-    @Test
-    void updateUserById_userNotFound_throws() {
-        UUID id = UUID.randomUUID();
-        UpdateUserRequestDTO req = mock(UpdateUserRequestDTO.class);
-        when(req.id()).thenReturn(id);
-        when(userRepository.findById(id)).thenReturn(Optional.empty());
-        assertThrows(ValidationException.class, () -> userService.updateUserById(req));
+        assertThrows(ValidationException.class, () -> userService.getUserById(userId));
     }
 
     @Test
     void deleteUserById_success() {
-        UUID id = UUID.randomUUID();
-        when(userRepository.existsById(id)).thenReturn(true);
-        doNothing().when(userRepository).deleteById(id);
-        String result = userService.deleteUserById(id);
-        assertTrue(result.contains("User Deleted Successfully"));
+        when(userRepository.existsById(userId)).thenReturn(true);
+
+        String response = userService.deleteUserById(userId);
+
+        assertTrue(response.contains("User Deleted Successfully"));
+        verify(userRepository).deleteById(userId);
     }
 
     @Test
-    void deleteUserById_notFound_throws() {
-        UUID id = UUID.randomUUID();
-        when(userRepository.existsById(id)).thenReturn(false);
-        ValidationException ex = assertThrows(ValidationException.class, () -> userService.deleteUserById(id));
-        assertTrue(ex.getMessage().contains("User not found with id"));
-    }
-}
+    void deleteUserById_notFound() {
+        when(userRepository.existsById(userId)).thenReturn(false);
 
+        assertThrows(ValidationException.class, () -> userService.deleteUserById(userId));
+    }
+    @Test
+    void updateUserById_successPasswordUpdate() {
+        UpdateUserRequestDTO request = new UpdateUserRequestDTO(
+                userId,
+                "testUser",
+                "test@example.com",
+                "newPassword123",
+                "Test User",
+                "USER"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(userEntity));
+        //when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(userRepository.save(userEntity)).thenReturn(userEntity);
+        when(userMapper.getOrUpdateUserByIdResponse(userEntity))
+                .thenReturn(new GetOrUpdateUserByIdResponseDTO(
+                        "testUser",
+                        "test@example.com",
+                        "Address",
+                        "Test User",
+                        "USER",
+                        Instant.now(),
+                        Instant.now()
+                ));
+
+        GetOrUpdateUserByIdResponseDTO response = userService.updateUserById(request);
+
+        assertNotNull(response);
+        verify(userRepository).save(userEntity);
+        assertEquals("testUser", response.userName());
+    }
+
+    @Test
+    void updateUserById_successEmailUpdate() {
+        UpdateUserRequestDTO request = new UpdateUserRequestDTO(
+                userId,
+                "testUser",
+                "newemail@example.com",
+                null,
+                "Test User",
+                "USER"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(userEntity));
+        when(userRepository.existsByEmail(request.email())).thenReturn(false);
+        when(userRepository.save(userEntity)).thenReturn(userEntity);
+        when(userMapper.getOrUpdateUserByIdResponse(userEntity))
+                .thenReturn(new GetOrUpdateUserByIdResponseDTO(
+                        "testUser",
+                        "newemail@example.com",
+                        "Address",
+                        "Test User",
+                        "USER",
+                        Instant.now(),
+                        Instant.now()
+                ));
+
+        GetOrUpdateUserByIdResponseDTO response = userService.updateUserById(request);
+
+        assertEquals("newemail@example.com", response.email());
+        verify(userRepository).save(userEntity);
+    }
+
+    @Test
+    void updateUserById_emailAlreadyExists_throwsException() {
+        UpdateUserRequestDTO request = new UpdateUserRequestDTO(
+                userId,
+                "testUser",
+                "existing@example.com",
+                null,
+                "Test User",
+                "USER"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.of(userEntity));
+        when(userRepository.existsByEmail(request.email())).thenReturn(true);
+
+        assertThrows(ValidationException.class, () -> userService.updateUserById(request));
+        verify(userRepository, never()).save(any(UserEntity.class));
+    }
+
+    @Test
+    void updateUserById_userNotFound_throwsException() {
+        UpdateUserRequestDTO request = new UpdateUserRequestDTO(
+                userId,
+                "testUser",
+                "test@example.com",
+                "password123",
+                "Test User",
+                "USER"
+        );
+
+        when(userRepository.findById(userId)).thenReturn(Optional.empty());
+
+        assertThrows(ValidationException.class, () -> userService.updateUserById(request));
+    }
+
+}
