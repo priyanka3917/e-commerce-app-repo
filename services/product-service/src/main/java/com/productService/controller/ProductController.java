@@ -64,7 +64,7 @@ public class ProductController {
     }
     @PutMapping("/reserve")
     @Operation(summary = "Reserve Stock")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<Void>> reserveStock(
             @RequestBody ReserveRequestDTO request) {
         productService.reserveStock(request);
@@ -72,13 +72,13 @@ public class ProductController {
     }
 
     @PutMapping("/release")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<Void>> releaseStock(@RequestParam String reservationId) {
         productService.releaseStock(reservationId);
         return ResponseEntity.ok().build();
     }
     @PutMapping("/confirm")
-    @PreAuthorize("hasRole('ADMIN')")
+//    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<GenericResponse<Void>> confirmReservation(@RequestParam String reservationId) {
         productService.confirmReservation(reservationId);
         return ResponseEntity.ok().build();

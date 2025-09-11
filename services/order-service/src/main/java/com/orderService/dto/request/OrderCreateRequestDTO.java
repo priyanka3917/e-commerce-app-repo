@@ -12,6 +12,9 @@ public record OrderCreateRequestDTO(
         @NotNull
         UUID userId,
 
+        @NotNull
+        String reservationId,
+
         @NotEmpty @Valid
         List<OrderItemRequestDTO> items
 ) {

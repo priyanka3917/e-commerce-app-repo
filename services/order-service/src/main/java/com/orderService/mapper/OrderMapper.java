@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Component
-public class OrderMapper {
+public class  OrderMapper {
     public OrderResponseDTO toOrderResponseDTO(OrderEntity order) {
         if (order == null) {
             return null;

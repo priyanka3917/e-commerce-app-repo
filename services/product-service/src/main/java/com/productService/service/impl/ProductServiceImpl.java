@@ -78,7 +78,13 @@ public class ProductServiceImpl implements ProductService {
         String reservationId = request.getReservationId();
 
         // Step 1: Validate all products have enough stock
-        for (ReserveItemDTO item : request.getItems()) {  // iterate request.getItems()
+        for (ReserveItemDTO item : request.getItems()) {
+            Optional<StockReservationEntity> existing = stockReservationRepository
+                    .findByReservationIdAndProductId(reservationId, item.getProductId());
+            if (existing.isPresent()) {
+                // Idempotent behavior → skip duplicate
+                continue;
+            }
             ProductEntity product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
 
@@ -86,9 +92,14 @@ public class ProductServiceImpl implements ProductService {
                 throw new RuntimeException("Insufficient stock for product: " + item.getProductId());
             }
         }
-
         // Step 2: Deduct stock & create reservations
         for (ReserveItemDTO item : request.getItems()) {
+            Optional<StockReservationEntity> existing = stockReservationRepository
+                    .findByReservationIdAndProductId(reservationId, item.getProductId());
+            if (existing.isPresent()) {
+                // Idempotent behavior → skip duplicate
+                continue;
+            }
             ProductEntity product = productRepository.findById(item.getProductId())
                     .orElseThrow(() -> new RuntimeException("Product not found: " + item.getProductId()));
 

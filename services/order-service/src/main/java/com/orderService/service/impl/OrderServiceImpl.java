@@ -30,10 +30,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -59,6 +56,13 @@ public class OrderServiceImpl implements OrderService {
     public OrderResponseDTO createOrder(OrderCreateRequestDTO request) {
         UUID userId = request.userId();
 
+        //Idempotency check → if order with same reservationId already exists
+        Optional<OrderEntity> existingOrder = orderRepo.findByReservationId(request.reservationId());
+        if (existingOrder.isPresent()) {
+            log.info("Duplicate order detected for reservationId {}", request.reservationId());
+            return orderMapper.toOrderResponseDTO(existingOrder.get());
+        }
+
         // Step 1: Validate user
         ResponseEntity<GenericResponse<GetOrUpdateUserByIdResponseDTO>> userResponse = userServiceClient.getUserById(userId);
         if (userResponse.getBody() == null || userResponse.getBody().getData() == null) {
@@ -69,7 +73,7 @@ public class OrderServiceImpl implements OrderService {
         OrderEntity order = new OrderEntity();
         order.setUserId(userId);
         order.setStatus(OrderStatus.PENDING);
-        order.setReservationId("RSV-" + UUID.randomUUID().toString().substring(0, 8));
+        order.setReservationId(request.reservationId());
 
         order = orderRepo.save(order);
         final OrderEntity savedOrder = order;
